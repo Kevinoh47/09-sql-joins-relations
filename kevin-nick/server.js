@@ -6,13 +6,14 @@ const express = require('express');
 const PORT = process.env.PORT || 3000;
 const app = express();
 
-const conString = '';
+const conString = 'postgres://localhost:5432/lab9';
 const client = new pg.Client(conString);
 client.connect();
 client.on('error', error => {
   console.error(error);
 });
 
+// Middleware plugins.
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(express.static('./public'));
@@ -24,10 +25,14 @@ app.get('/new-article', (request, response) => {
 
 // REVIEW: These are routes for making API calls to enact CRUD operations on our database.
 app.get('/articles', (request, response) => {
-  client.query(``)
-    .then(result => {
-      response.send(result.rows);
-    })
+  client.query(`
+    SELECT a.article_id, a.title, a.category, a.published_on, a.body, 
+    b.author_id, b.author, b.author_url
+    FROM articles a
+    JOIN authors b 
+    ON a.author_id = b.author_id;
+    `)
+    .then(result => { response.send(result.rows);})
     .catch(err => {
       console.error(err)
       response.status(500).send(err);
