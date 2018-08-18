@@ -91,12 +91,17 @@ app.post('/articles', (request, response) => {
 });
 
 app.put('/articles/:id', function(request, response) {
-  let SQL = '';
-  let values = [];
+
+  console.log('INSIDE UPDATE!! request object, params property:', request.params);
+
+  let SQL = `UPDATE authors SET author=$1, author_url=$2 WHERE author_id=$3;`;
+  let values = [request.body.author, request.body.author_url,request.body.author_id];
   client.query(SQL, values)
     .then(() => {
-      let SQL = '';
-      let values = [];
+      let SQL = `UPDATE articles 
+                SET title=$1, category=$2, published_on=$3, body=$4 
+                WHERE article_id=$5;`;
+      let values = [request.body.title, request.body.category, request.body.published_on, request.body.body,request.params.id];
       return client.query(SQL, values);
     })
     .then(() => {
@@ -119,6 +124,25 @@ app.delete('/articles/:id', (request, response) => {
       console.error(err)
       response.status(500).send(err);
     });
+});
+
+//Trying to get a particular article, so that it can be updated.
+app.get('/articles/:id', (request, response) => {
+  console.log('INSIDE NEW APP.GET, request.params: ',request.params);
+  let SQL = `SELECT a.article_id, a.title, a.category, a.published_on, a.body, 
+                    b.author_id, b.author, b.author_url
+              FROM articles a
+              JOIN authors b ON a.author_id = b.author_id
+              WHERE a.article_id=$1;`;
+  console.log('SQL: ', SQL);
+  let values = [request.params.id];
+  console.log('values: ', values);
+  client.query(SQL, values)
+    .then(result => { response.send(result.rows);})
+    .catch(err => {
+      console.error(err)
+      response.status(500).send(err);
+    })
 });
 
 app.delete('/articles', (request, response) => {
